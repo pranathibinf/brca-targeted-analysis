@@ -1,0 +1,8 @@
+q1_total_isoforms: 26350
+q2_panel_isoforms: 276
+q3_top_gene: ATM
+q4_brca1_vs_brca2: 2.33
+q5_top3_genes:
+- ATM
+- MLH1
+- RAD50
