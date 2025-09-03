@@ -280,7 +280,7 @@ with open(qs_path, "w") as f:
 print(f"[OK] wrote {qs_path}")
 print(open(qs_path).read())
 
-# --- compute answers.yaml (same logic) ---
+# --- compute answers.yaml  ---
 import math, yaml
 iso_tsv = os.path.join(BASE, "results", "isoform_counts.tsv")
 hits_tsv = os.path.join(BASE, "results", "panel_gene_hits.tsv")
