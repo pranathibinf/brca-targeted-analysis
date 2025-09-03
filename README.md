@@ -39,6 +39,7 @@ brca-targeted-analysis/
 ## 2. Installation & Execution
 ### Option A: Run in Google Colab (recommended)
 	1.	Open a Colab session.
+ 
 	2.	Mount Google Drive:
  ```python
 from google.colab import drive
@@ -73,6 +74,7 @@ cd brca-targeted-analysis/brca-targeted-analysis/workflow
 	•	python ≥3.10 with pandas, matplotlib, pyyaml
 
  	3.	Provide raw FASTQ under data/raw/, subsample with seqtk.
+  
 	4.	Run:
  ```bash
 python targeted_brca.py
