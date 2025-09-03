@@ -8,7 +8,10 @@ The sequencing was performed on ONT MinION runs, and we use a subsampled FASTQ (
 BMC Genomics, 2024. **DOI:** [10.1186/s12864-024-10741-0](https://doi.org/10.1186/s12864-024-10741-0)
 
 **Study accession:** ENA PRJEB75906 (28 HBOC genes, lymphoblastoid cell lines);
-**Download:** Example run ERR13137440 FASTQ from ENA : ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR131/040/ERR13137440/ERR13137440.fastq.gz 
+**Download:** 
+Example run ERR13137440 FASTQ from ENA : 
+	•	HTTPS: https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR131/040/ERR13137440/ERR13137440.fastq.gz
+	•	FTP: ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR131/040/ERR13137440/ERR13137440.fastq.gz
 
 ### Layout
 ```bash
@@ -29,34 +32,51 @@ brca-targeted-analysis/
     ├── questions.yaml
     ├── answers.yaml
     └── workflow/
-        ├── targeted_brca.ipynb      # Colab notebook (end-to-end)
-        └── outputs/            # extra figs/zips
+        ├──targeted_brca.py     # python file
+        └── outputs/            # extra figs/zips 
 ```
 
 ## 2. Installation & Execution
-### Step 1. Open workflow/targeted_brca.ipynb in Google Colab.
-### Step 2. Mount Google Drive:
-```python
+### Option A: Run in Google Colab (recommended)
+	1.	Open a Colab session.
+	2.	Mount Google Drive:
+ ```python
 from google.colab import drive
 drive.mount('/content/drive')
 ```
-### Step 3. Install required packages (done inside notebook):
-```bash
-apt-get -qq update
-apt-get -qq install -y minimap2 samtools bedtools seqtk gffread stringtie
+	3.	Install required packages:
+ ```bash
+!apt-get -qq update
+!apt-get -qq install -y minimap2 samtools bedtools seqtk gffread stringtie
 ```
-### Step 4. Place raw FASTQ in data/raw/ and subsample:
-```bash
-seqtk sample -s100 data/raw/ERR13137440.fastq.gz 300000 | gzip -c > data/processed/mini_ERR13137440.fastq.gz
+	4.	Place raw FASTQ in data/raw/ and subsample:
+ ```bash
+!seqtk sample -s100 data/raw/ERR13137440.fastq.gz 300000 | gzip -c > data/processed/mini_ERR13137440.fastq.gz
 ```
-### Step 5. Run the notebook cells to:
-	•	Build refs (GRCh38 + GENCODE v46 + 28-gene BED).
-	•	Map reads → BAM (minimap2 + samtools).
-	•	Assemble isoforms (StringTie).
-	•	Convert to BED (gffread + Python).
-	•	Intersect with panel BED (bedtools).
-	•	Summarize and plot results.
+	5.	Run the workflow:
+ ```bash
+!python brca-targeted-analysis/workflow/targeted_brca.py
+```
+#### Option B: Run locally / HPC
+	1.	Clone repo:
+ ```bash
+git clone https://github.com/<your-username>/brca-targeted-analysis.git
+cd brca-targeted-analysis/brca-targeted-analysis/workflow
+```
+	2.	Install dependencies (apt or conda):
+	•	minimap2
+	•	samtools
+	•	bedtools
+	•	seqtk
+	•	gffread
+	•	stringtie
+	•	python ≥3.10 with pandas, matplotlib, pyyaml
 
+ 	3.	Provide raw FASTQ under data/raw/, subsample with seqtk.
+	4.	Run:
+ ```bash
+python targeted_brca.py
+```
  ## 3. Primary Outputs
  	•	results/isoform_counts.tsv → all transcripts + panel overlaps.
 	•	results/panel_gene_hits.tsv → per-gene transcript overlap counts.
@@ -66,7 +86,7 @@ All outputs are under results/, all intermediates under align/ and isoforms/.
 
 ## Notes:
 	•	Input FASTQs are subsampled to 300k reads to keep files <1 GB.
-	•	Pipeline uses only standard tools: minimap2, samtools, stringtie, gffread, bedtools.
-	•	Reproducibility: all steps contained in Colab notebook workflow.ipynb.
-	•	You can scale to 1M reads or add more runs if resources allow.
+	•	Pipeline uses only standard tools (minimap2, samtools, stringtie, gffread, bedtools).
+	•	Entire workflow is captured in a single Python script (targeted_brca.py)
+	•	Questions and answers are generated automatically (questions.yaml, answers.yaml).
 
