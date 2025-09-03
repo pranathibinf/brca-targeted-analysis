@@ -41,14 +41,14 @@ for root, dirs, files in os.walk(BASE):
     for f in files:
         print(f"{subindent}{f}")
 
-# --- (INSTALL TOOLS) disabled by default ---
+# --- Install tools required ---
 # To run, set RUN_INSTALL=True
-RUN_INSTALL = False
+RUN_INSTALL = True
 if RUN_INSTALL:
     sh("apt-get -qq update")
     sh("apt-get -qq install -y minimap2 samtools bedtools seqtk gffread stringtie")
 
-# --- (SUBSAMPLE)  ---
+# --- Subsample ---
 RUN_SUBSAMPLE = False  # set True if you want to run subsampling here
 if RUN_SUBSAMPLE:
     cmd = f'''
@@ -223,8 +223,8 @@ out=os.path.join(BASE,"results","top_panel_genes.png")
 plt.savefig(out, dpi=160, bbox_inches="tight")
 print("saved:", out)
 
-# --- (OPTIONAL) BAM→CRAM ---
-RUN_CRAM = False
+# --- (Optional) BAM→CRAM ---
+RUN_CRAM = True
 if RUN_CRAM:
     cmd = f'''
 BASE="{BASE}"; KEEP="{KEEP}"
@@ -280,7 +280,7 @@ with open(qs_path, "w") as f:
 print(f"[OK] wrote {qs_path}")
 print(open(qs_path).read())
 
-# --- compute answers.yaml  ---
+# --- compute answers.yaml (same logic) ---
 import math, yaml
 iso_tsv = os.path.join(BASE, "results", "isoform_counts.tsv")
 hits_tsv = os.path.join(BASE, "results", "panel_gene_hits.tsv")
