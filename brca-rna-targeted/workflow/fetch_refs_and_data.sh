@@ -1,38 +1,38 @@
 #!/usr/bin/env bash
 # fetch_refs_and_data.sh
 # Download refs (GRCh38 + GENCODE v46), build 28-gene panel BED,
-# fetch one ENA FASTQ for $KEEP, subsample to <1 GB, and compress to .xz (python lzma).
+# fetch one ENA FASTQ for $KEEP, subsample (default 50k reads), write .xz.
+
 set -euo pipefail
 
-# --------- Params (override via env) ----------
+# ------------ Params ------------
 BASE="${BASE:-$PWD/brca-rna-targeted}"
 KEEP="${KEEP:-ERR13137440}"          # ENA run accession
-NREADS="${NREADS:-300000}"           # subsample reads
-RUN_URL="${RUN_URL:-}"               # optional: direct FASTQ URL; else resolve via ENA API
-INSTALL="${INSTALL:-0}"              # set 1 to apt-get curl/wget/seqtk/pigz if needed
+NREADS="${NREADS:-50000}"            # smaller
+RUN_URL="${RUN_URL:-}"               # provide to skip ENA lookup
+INSTALL="${INSTALL:-0}"              # set 1 to apt-get curl/wget/seqtk if needed
+XZ_PRESET="${XZ_PRESET:-3}"          # 3 = fast; 6–9 = smaller but slower
 
-# --------- Tools check / optional install -----
+# ------------ check tools/ optional install -------
 need() { command -v "$1" >/dev/null 2>&1; }
-if [ "$INSTALL" = "1" ]; then
-  if need apt-get; then
-    sudo apt-get -qq update
-    sudo apt-get -qq install -y curl wget seqtk pigz || true
-  fi
+if [ "$INSTALL" = "1" ] && need apt-get; then
+  sudo apt-get -qq update
+  sudo apt-get -qq install -y curl wget seqtk || true
 fi
-for t in curl wget seqtk python3; do
+for t in curl wget python3; do
   need "$t" || { echo "[ERR] missing '$t' (set INSTALL=1 to attempt apt-get)"; exit 1; }
 done
 
-# --------- Layout -----------------------------
+# ------------ Layout ------------------------------
 RAW="$BASE/data/raw"
 PROC="$BASE/data/processed"
-REF="$BASE/data/refs"
+REF="$BASE/refs"                      # <— use refs/ (not data/refs)
 ALIGN="$BASE/align"
 ISO="$BASE/isoforms"
 RES="$BASE/results"
 mkdir -p "$RAW" "$PROC" "$REF" "$ALIGN" "$ISO" "$RES" "$BASE/workflow/outputs"
 
-# --------- Refs (GRCh38 + GENCODE v46) --------
+# ------------ Refs (GRCh38 + GENCODE v46) --------
 FA_URL="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/GRCh38.primary_assembly.genome.fa.gz"
 GTF_URL="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_46/gencode.v46.annotation.gtf.gz"
 FA="$REF/GRCh38.primary_assembly.genome.fa"
@@ -41,16 +41,25 @@ GTF="$REF/gencode.v46.annotation.gtf"
 if [ ! -s "$FA" ]; then
   echo "[REF] downloading GRCh38 fasta"
   wget -q -O "$FA.gz" "$FA_URL"
-  pigz -d -f "$FA.gz"
+  python3 - <<PY
+import gzip,shutil
+with gzip.open("$FA.gz","rb") as fin, open("$FA","wb") as fout:
+    shutil.copyfileobj(fin,fout)
+PY
 fi
+
 if [ ! -s "$GTF" ]; then
   echo "[REF] downloading GENCODE v46 gtf"
   wget -q -O "$GTF.gz" "$GTF_URL"
-  pigz -d -f "$GTF.gz"
+  python3 - <<PY
+import gzip,shutil
+with gzip.open("$GTF.gz","rb") as fin, open("$GTF","wb") as fout:
+    shutil.copyfileobj(fin,fout)
+PY
 fi
-echo "[REF] done: $(basename "$FA"), $(basename "$GTF")"
+echo "[REF] ready: $(basename "$FA"), $(basename "$GTF")"
 
-# --------- 28-gene panel BED (robust, via Python) ----
+# ------------ 28-gene panel BED  --
 PANEL_TXT="$REF/panel28_genes.txt"
 cat > "$PANEL_TXT" <<'TXT'
 BRCA1
@@ -107,20 +116,17 @@ print(f"[PANEL] rows:", n)
 PY
 echo "[PANEL] wrote: $PANEL_BED"
 
-# --------- Resolve FASTQ URL (if not provided) ----
+# ------------ Resolve FASTQ URL (if not provided) -
 if [ -z "$RUN_URL" ]; then
   echo "[ENA] resolving FASTQ URL for $KEEP"
-  # ENA portal (tsv; field 'fastq_ftp'); pick first URL if multiple
   FASTQ_FTP=$(curl -s "https://www.ebi.ac.uk/ena/portal/api/search?result=read_run&query=run_accession=${KEEP}&fields=fastq_ftp&format=tsv&limit=0" \
             | awk 'NR==2{print $1}' | tr ';' '\n' | head -n1)
-  if [ -z "$FASTQ_FTP" ]; then
-    echo "[ERR] could not resolve fastq_ftp for $KEEP"; exit 1
-  fi
+  [ -n "$FASTQ_FTP" ] || { echo "[ERR] could not resolve fastq_ftp for $KEEP"; exit 1; }
   RUN_URL="ftp://${FASTQ_FTP}"
 fi
 echo "[ENA] using FASTQ URL: $RUN_URL"
 
-# --------- Download raw FASTQ ------------------------
+# ------------ Download raw FASTQ ------------------
 RAW_FASTQ="$RAW/${KEEP}.fastq.gz"
 if [ ! -s "$RAW_FASTQ" ]; then
   echo "[DL] $RUN_URL -> $RAW_FASTQ"
@@ -129,35 +135,36 @@ else
   echo "[SKIP] raw exists: $RAW_FASTQ"
 fi
 
-# --------- Subsample to processed mini FASTQ (.gz) ----
-MINI_GZ="$PROC/mini_${KEEP}.fastq.gz"
-if [ ! -s "$MINI_GZ" ]; then
-  echo "[SUBSAMPLE] $NREADS reads -> $MINI_GZ"
-  seqtk sample -s100 "$RAW_FASTQ" "$NREADS" | pigz -c > "$MINI_GZ"
-else
-  echo "[SKIP] processed exists: $MINI_GZ"
-fi
-
-# --------- Convert .gz -> .xz using Python lzma ----------
+# ------------ Subsample directly to .xz -----------
 MINI_XZ="$PROC/mini_${KEEP}.fastq.xz"
 if [ ! -s "$MINI_XZ" ]; then
-  echo "[XZ] converting $MINI_GZ -> $MINI_XZ (python lzma)"
-  python3 - "$MINI_GZ" "$MINI_XZ" <<'PY'
-import sys,gzip,lzma,shutil,os
-src,dst = sys.argv[1], sys.argv[2]
-with gzip.open(src,"rb") as fin, lzma.open(dst,"wb", preset=6) as fout:
-  shutil.copyfileobj(fin,fout)
-print("[XZ] wrote:", dst, "size_MB=", round(os.path.getsize(dst)/1024/1024,1))
+  echo "[SUBSET] ${NREADS} reads -> $MINI_XZ (xz preset $XZ_PRESET)"
+  python3 - "$RAW_FASTQ" "$MINI_XZ" "$NREADS" "$XZ_PRESET" <<'PY'
+import sys,gzip,lzma,os
+src,dst,nreads,preset = sys.argv[1],sys.argv[2],int(sys.argv[3]),int(sys.argv[4])
+reads=0
+with gzip.open(src,"rt",encoding="utf-8",errors="ignore") as fin, \
+     lzma.open(dst,"wt",encoding="utf-8",preset=preset) as fout:
+  while reads < nreads:
+    h=fin.readline()
+    if not h: break
+    s=fin.readline(); plus=fin.readline(); q=fin.readline()
+    if not q: break
+    if not h.startswith("@"): continue
+    fout.write(h); fout.write(s); fout.write(plus); fout.write(q)
+    reads += 1
+size = os.path.getsize(dst)/1024/1024
+print(f"[WROTE] {dst} reads={reads} size_MB={size:.1f}")
 PY
 else
-  echo "[SKIP] xz exists: $MINI_XZ"
+  echo "[SKIP] mini exists: $MINI_XZ"
 fi
 
-# --------- Summary --------------------------------------
+# ------------ Summary -----------------------------
 echo
 echo "[SUMMARY]"
-du -h "$REF" | tail -n1
-du -h "$RAW" | tail -n1
-du -h "$PROC" | tail -n1
-ls -lh "$PROC" | sed -n '1,999p'
+du -h "$REF" | tail -n1 || true
+du -h "$RAW" | tail -n1 || true
+du -h "$PROC" | tail -n1 || true
+ls -lh "$PROC" || true
 echo "[DONE]"
