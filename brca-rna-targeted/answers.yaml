@@ -1,9 +1,9 @@
 answers:
-q1_total_isoforms: 2400
-q2_panel_isoforms: 211
-q3_top_gene: ATM
-q4_brca1_vs_brca2: 2.1
-q5_top3_genes:
-  - ATM
-  - BRCA1
-  - RAD51C
+  q1_total_isoforms: 2400
+  q2_panel_isoforms: 211
+  q3_top_gene: ATM
+  q4_brca1_vs_brca2: 2.1
+  q5_top3_genes:
+    - ATM
+    - BRCA1
+    - RAD51C
