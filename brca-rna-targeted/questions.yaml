@@ -1,19 +1,19 @@
 task: >
   You have been given a subsampled long-read RNA-seq dataset (ERR13137440).
-  Using outputs in results/, answer:
+  Using the processed FASTQ/BAM and panel-intersect outputs in results/, answer the following:
 
 questions:
 - id: q1_total_isoforms
   stage: isoform_assembly
   text: How many total transcripts were assembled from ERR13137440?
-  answer_type: integer_exact
-  tolerance_abs: 250        
+  answer_type: integer_range
+  range: [2300, 2500]
 
 - id: q2_panel_isoforms
   stage: panel_intersection
   text: How many transcripts overlapped the 28-gene HBOC panel?
-  answer_type: integer_exact
-  tolerance_abs: 25         
+  answer_type: integer_range
+  range: [200, 220]
 
 - id: q3_top_gene
   stage: gene_summary
@@ -23,10 +23,10 @@ questions:
 - id: q4_brca1_vs_brca2
   stage: gene_comparison
   text: What is the transcript count ratio BRCA1/BRCA2?
-  answer_type: numeric_float
-  tolerance: 0.10           
+  answer_type: numeric_range
+  range: [2.0, 2.2]
 
 - id: q5_top3_genes
   stage: visualization
-  text: According to panel_gene_hits_agg.tsv, what are the top 3 genes by count?
+  text: According to panel_gene_hits.tsv, what are the top 3 genes by count?
   answer_type: list_string
