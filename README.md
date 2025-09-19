@@ -2,7 +2,7 @@
 
 ## 1. Data sources
 This workflow reproduces part of the SOSTAR pipeline using a publicly available capture-based targeted RNA-seq dataset focused on 28 hereditary breast/ovarian cancer (HBOC) genes.  
-Sequencing was performed on ONT MinION runs. We use a **subsampled FASTQ.gz (~15k reads)** for reproducibility.
+Sequencing was performed on ONT MinION runs. We use a **subsampled FASTQ.gz (30k reads)** for reproducibility.
 
 **Paper:** Fine mapping of RNA isoform diversity using an innovative targeted long-read RNA sequencing protocol with novel dedicated bioinformatics pipeline.  
 *BMC Genomics*, 2024. DOI: [10.1186/s12864-024-10741-0](https://doi.org/10.1186/s12864-024-10741-0)
@@ -13,14 +13,13 @@ Sequencing was performed on ONT MinION runs. We use a **subsampled FASTQ.gz (~15
 - HTTPS: https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR131/040/ERR13137440/ERR13137440.fastq.gz  
 - FTP: ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR131/040/ERR13137440/ERR13137440.fastq.gz  
 
-For Taiga:
-**Bundled references (panel-only, no downloads):**
-- `refs/GRCh38.panel28.pad50k.fa`
-- `refs/gencode.v46.panel28.gtf`
-- `refs/panel28_genes.bed`
-
-**Processed input provided:**
-- `data/processed/mini_ERR13137440.fastq.gz`
+### For Taiga:
+**Processed input (bundled or user-generated):** data/processed/mini_ERR13137440.fastq.gz (subsampled FASTQ .gz).
+**Panel-only references (bundled; no full genome needed):**
+	•	refs/GRCh38.panel28.pad50k.fa
+	•	refs/gencode.v46.panel28.gtf
+	•	refs/panel28_genes.bed (raw genomic BED)
+	•	refs/panel28_genes.panelspace.bed (auto-built on first run)
 
 ## 2. Layout
 ```bash
@@ -63,14 +62,22 @@ conda create -n brca-rna python=3.11 -y
 conda activate brca-rna
 conda config --add channels conda-forge
 conda config --add channels bioconda
-conda install -y minimap2 samtools bedtools stringtie gffread pandas matplotlib pyyaml
+conda install -y minimap2 samtools bedtools stringtie gffread pandas matplotlib pyyaml seqtk
 ```
-# run the workflow (set BASE to your local project root)
+# set the workflow (set BASE to your local project root)
 ```bash
 export BASE="/path/to/brca-targeted-analysis/brca-rna-targeted"
 export KEEP="ERR13137440"
-python "${BASE}/workflow/targeted_brca.py"
+export PATH="$(conda info --base)/envs/brca-rna/bin:$PATH"
 ```
+# (optional) subsample raw to .gz
+```bash
+# seqtk sample -s100 "$BASE/data/raw/${KEEP}.fastq.gz" 30000 | gzip -c > "$BASE/data/processed/mini_${KEEP}.fastq.gz"
+```
+# run
+```bash
+python3 "$BASE/workflow/targeted_brca.py"
+````
 **Expected inputs present before running:**
 	•	${BASE}/data/processed/mini_ERR13137440.fastq.xz
 	•	${BASE}/refs/GRCh38.panel28.pad50k.fa
@@ -93,15 +100,20 @@ KEEP = "ERR13137440"
 # run
 !BASE="{BASE}" KEEP="{KEEP}" python "{BASE}/workflow/targeted_brca.py"
 ```
-**Note:** The workflow uses the bundled panel references and a pre-subsampled .xz FASTQ. No downloads are performed by targeted_brca.py. If you want to regenerate the .xz from a full .fastq.gz, do that separately.
-
+**Script does: **
+	•	Maps mini_*.fastq.gz to the panel FASTA with minimap2.
+	•	Assembles with StringTie (-L) and converts to GTF.
+	•	Builds panel-space BED from the FASTA headers if missing.
+	•	Intersects transcripts vs panel-space with bedtools.
+ 
 # 5. Primary Outputs
-- `results/isoform_counts.tsv`
-- `results/panel_gene_hits.tsv`
-- `results/top_panel_genes.png`
+	•	results/isoform_counts.tsv → <sample>  total  panel
+	•	results/panel_gene_hits.tsv → sample  gene  count
+	•	results/panel_gene_hits_agg.tsv → gene  count
+	•	results/top_panel_genes.png
   
 ## Notes:
-	•	Subsampled to 15k reads to reduce runtime and keep processed FASTQ.
-	•	Uses only standard tools.
+	•	Subsampled to 30k reads to reduce runtime and keep processed FASTQ.
+	•	All steps operate on the bundled 28-gene panel references; no full-genome index required.
 	•	Workflow is captured in a single Python script: workflow/targeted_brca.py.
 
