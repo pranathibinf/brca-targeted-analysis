@@ -1,6 +1,6 @@
 project_title: "BRCA-Targeted RNA Analysis — HBOC 28-gene panel (ONT long-read)"
 project_slug: brca_targeted_analysis
-description: >
+description: 
   Mini workflow on a subsampled ONT targeted RNA-seq run using a 28-gene HBOC panel.
   Reads are aligned to a bundled panel-only reference, assembled with StringTie,
   and intersected against panel coordinates to produce counts and plots.
@@ -30,9 +30,8 @@ tools:
 
 parameters:
   threads: 4
-  subsample_reads_per_sample: 30000   # set by user with seqtk
+  subsample_reads_per_sample: 30000   # set 
   compression: gz                     # processed FASTQ uses .gz only
-  file_size_target_per_fastq_gz: "<= 1 GB"
 
 layout:
   raw_fastqs: data/raw/
