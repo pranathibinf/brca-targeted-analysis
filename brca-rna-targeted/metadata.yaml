@@ -2,39 +2,38 @@ project_title: "brca-targeted-analysis — HBOC 28-gene capture RNA-seq"
 doi: "https://doi.org/10.1186/s12864-024-10741-0"
 project_slug: brca_targeted_analysis
 description: >
-  Mini Taiga/SEPAL-friendly workflow reproducing part of the SOSTAR pipeline:
-  use a subsampled ONT RNA-seq run (<1 GB), align with minimap2, assemble
-  isoforms with StringTie, convert to BED (gffread), and intersect with a
-  28-gene HBOC panel. Outputs include isoform counts, per-gene overlaps, and a
-  top-genes plot.
+  Mini workflow using a 28-gene HBOC panel. A subsampled ONT readset
+  (mini_ERR13137440.fastq.xz) is aligned to a bundled panel FASTA,
+  isoforms are assembled against a bundled panel GTF, and transcript
+  overlaps with the panel are summarized and plotted.
 
 data_source:
-  - "ENA: ERR13137440 (PRJEB75906) — subsampled"
-  - "Reduced references: GRCh38.panel28.pad50k.fa + gencode.v46.panel28.gtf (±50kb around panel genes)"
-  - "Target panel: 28 HBOC predisposition genes"
+  - "ENA: ERR13137440 (PRJEB75906) — subsampled and stored locally as .xz"
+  - "Panel FASTA: refs/GRCh38.panel28.pad50k.fa (bundled)"
+  - "Panel GTF: refs/gencode.v46.panel28.gtf (bundled)"
 
 domain: targeted_rnaseq
-ref_genome:
-  - "Homo sapiens — GRCh38 (reduced to panel regions, GENCODE v46)"
 
-panel_genes:
-  [BRCA1, BRCA2, ATM, ATR, BARD1, BRIP1, CDH1, CHEK2, MRE11, NBN, PALB2,
-   PTEN, RAD50, RAD51, RAD51C, RAD51D, RECQL, TP53, XRCC2, XRCC3,
-   FANCA, FANCC, FANCM, MSH2, MSH6, MLH1, PMS2, EPCAM]
+ref_genome:
+  - "Homo sapiens — 28-gene HBOC panel FASTA (GRCh38 regions ±50kb padding)"
+  - "GENCODE v46 panel GTF (28 genes)"
+
+panel_genes: [BRCA1, BRCA2, ATM, ATR, BARD1, BRIP1, CDH1, CHEK2, MRE11, NBN, PALB2,
+              PTEN, RAD50, RAD51, RAD51C, RAD51D, RECQL, TP53, XRCC2, XRCC3,
+              FANCA, FANCC, FANCM, MSH2, MSH6, MLH1, PMS2, EPCAM]
 
 tools:
-  - minimap2 >=2.24
-  - samtools >=1.20
-  - stringtie >=2.2
-  - gffread >=0.12
-  - bedtools >=2.31
-  - python >=3.10 (pandas, matplotlib)
+  - minimap2
+  - samtools
+  - stringtie
+  - gffread
+  - bedtools
+  - python 3.10+ (pandas, matplotlib, pyyaml)
 
 parameters:
   threads: 4
-  subsample_reads_per_sample: 50000
-  subsample_seed: 100
-  file_size_target_per_fastq: "<= 1 GB"
+  subsample_reads_per_sample: 50_000     
+  file_size_target_per_fastq_xz: "<= 1 GB"
 
 layout:
   raw_fastqs: data/raw/
@@ -50,12 +49,8 @@ samples_analyzed:
   - id: ERR13137440
     inputs:
       subsampled_fastq_xz: "data/processed/mini_ERR13137440.fastq.xz"
-    refs:
-      fasta: "refs/GRCh38.panel28.pad50k.fa"
-      gtf: "refs/gencode.v46.panel28.gtf"
-      panel_bed: "refs/panel28_genes.bed"
     align_outputs:
-      bam_or_cram: "align/ERR13137440.(bam|cram)"
+      bam: "align/ERR13137440.bam"
     isoform_outputs:
       gtf: "isoforms/ERR13137440/ERR13137440.gtf"
       transcripts_bed: "isoforms/ERR13137440/ERR13137440.transcripts.bed"
@@ -65,5 +60,5 @@ samples_analyzed:
       top_panel_genes_png: "results/top_panel_genes.png"
 
 estimates:
-  estimated_runtime_minutes: 30
-  estimated_time_for_human_minutes: 10
+  estimated_runtime_minutes: 30 
+  estimated_time_for_human_minutes: 40
