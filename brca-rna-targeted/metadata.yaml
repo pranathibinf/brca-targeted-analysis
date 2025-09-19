@@ -1,39 +1,38 @@
-project_title: "brca-targeted-analysis — HBOC 28-gene capture RNA-seq"
-doi: "https://doi.org/10.1186/s12864-024-10741-0"
+project_title: "BRCA-Targeted RNA Analysis — HBOC 28-gene panel (ONT long-read)"
 project_slug: brca_targeted_analysis
 description: >
-  Mini workflow using a 28-gene HBOC panel. A subsampled ONT readset
-  (mini_ERR13137440.fastq.xz) is aligned to a bundled panel FASTA,
-  isoforms are assembled against a bundled panel GTF, and transcript
-  overlaps with the panel are summarized and plotted.
+  Mini workflow on a subsampled ONT targeted RNA-seq run using a 28-gene HBOC panel.
+  Reads are aligned to a bundled panel-only reference, assembled with StringTie,
+  and intersected against panel coordinates to produce counts and plots.
 
 data_source:
-  - "ENA: ERR13137440 (PRJEB75906) — subsampled and stored locally as .xz"
-  - "Panel FASTA: refs/GRCh38.panel28.pad50k.fa (bundled)"
-  - "Panel GTF: refs/gencode.v46.panel28.gtf (bundled)"
+  - "ENA PRJEB75906; example run: ERR13137440"
+  - "Reference: GRCh38 panel-only FASTA + GENCODE v46 panel GTF (bundled)"
+  - "Processed input: mini_ERR13137440.fastq.gz (subsampled)"
 
 domain: targeted_rnaseq
 
 ref_genome:
-  - "Homo sapiens — 28-gene HBOC panel FASTA (GRCh38 regions ±50kb padding)"
-  - "GENCODE v46 panel GTF (28 genes)"
+  - "Human GRCh38 — panel-only FASTA (28 loci, ±50kb padding), GENCODE v46 GTF"
 
 panel_genes: [BRCA1, BRCA2, ATM, ATR, BARD1, BRIP1, CDH1, CHEK2, MRE11, NBN, PALB2,
               PTEN, RAD50, RAD51, RAD51C, RAD51D, RECQL, TP53, XRCC2, XRCC3,
               FANCA, FANCC, FANCM, MSH2, MSH6, MLH1, PMS2, EPCAM]
 
 tools:
-  - minimap2
-  - samtools
-  - stringtie
-  - gffread
-  - bedtools
-  - python 3.10+ (pandas, matplotlib, pyyaml)
+  - minimap2 >=2.24
+  - samtools >=1.20
+  - stringtie >=2.2
+  - gffread >=0.12
+  - bedtools >=2.31
+  - python 3.10+ (pandas, matplotlib)
+  - seqtk (optional; for subsampling)
 
 parameters:
   threads: 4
-  subsample_reads_per_sample: 50_000     
-  file_size_target_per_fastq_xz: "<= 1 GB"
+  subsample_reads_per_sample: 30000   # set by user with seqtk
+  compression: gz                     # processed FASTQ uses .gz only
+  file_size_target_per_fastq_gz: "<= 1 GB"
 
 layout:
   raw_fastqs: data/raw/
@@ -48,7 +47,7 @@ layout:
 samples_analyzed:
   - id: ERR13137440
     inputs:
-      subsampled_fastq_xz: "data/processed/mini_ERR13137440.fastq.xz"
+      subsampled_fastq_gz: "data/processed/mini_ERR13137440.fastq.gz"
     align_outputs:
       bam: "align/ERR13137440.bam"
     isoform_outputs:
@@ -57,8 +56,9 @@ samples_analyzed:
     panel_outputs:
       isoform_counts: "results/isoform_counts.tsv"
       panel_gene_hits: "results/panel_gene_hits.tsv"
+      panel_gene_hits_agg: "results/panel_gene_hits_agg.tsv"
       top_panel_genes_png: "results/top_panel_genes.png"
 
 estimates:
-  estimated_runtime_minutes: 30 
-  estimated_time_for_human_minutes: 40
+  estimated_runtime_minutes: 30
+  estimated_time_for_human_minutes: 20
