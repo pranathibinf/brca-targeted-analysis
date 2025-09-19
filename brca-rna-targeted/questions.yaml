@@ -1,29 +1,27 @@
-task: >
-  You have been given a subsampled long-read RNA-seq dataset (ERR13137440).
-  Using the processed FASTQ/BAM and panel-intersect outputs in results/, answer the following:
-
+task: Answer based on the subsampled panel-only workflow outputs in results/.
 questions:
-- id: q1_total_isoforms
-  stage: isoform_assembly
-  text: How many total transcripts were assembled from ERR13137440?
-  answer_type: integer_exact
-
-- id: q2_panel_isoforms
-  stage: panel_intersection
-  text: How many transcripts overlapped the 28-gene HBOC panel?
-  answer_type: integer_exact
-
-- id: q3_top_gene
-  stage: gene_summary
-  text: Which panel gene had the highest transcript overlap count?
-  answer_type: string_exact
-
-- id: q4_brca1_vs_brca2
-  stage: gene_comparison
-  text: What is the transcript count ratio BRCA1/BRCA2?
-  answer_type: numeric_float
-
-- id: q5_top3_genes
-  stage: visualization
-  text: According to panel_gene_hits.tsv, what are the top 3 genes by count?
-  answer_type: list_string
+  -
+    id: q1_total_isoforms
+    stage: isoform_assembly
+    text: How many total transcripts were assembled?
+    answer_type: integer
+  -
+    id: q2_panel_isoforms
+    stage: panel_intersection
+    text: How many transcripts overlapped the 28-gene HBOC panel?
+    answer_type: integer
+  -
+    id: q3_top_gene
+    stage: gene_summary
+    text: Which panel gene had the highest transcript overlap count?
+    answer_type: string_exact
+  -
+    id: q4_brca1_vs_brca2
+    stage: gene_comparison
+    text: What is the BRCA1/BRCA2 transcript-overlap ratio?
+    answer_type: numeric
+  -
+    id: q5_top3_genes
+    stage: visualization
+    text: What are the top 3 panel genes by overlap count (desc)?
+    answer_type: list_string
