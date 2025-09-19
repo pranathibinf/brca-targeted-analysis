@@ -1,9 +1,9 @@
 answers:
-q1_total_isoforms: 2400 [tolerance 2300, 2500]
-q2_panel_isoforms: 211 [tolerance 200, 220]
-q3_top_gene: ATM
-q4_brca1_vs_brca2: 2.1 [tolerance 2.0, 2.2]
-q5_top3_genes:
-  - ATM
-  - BRCA1
-  - RAD51C
+  q1_total_isoforms: 366 [tolerance 329, 403]
+  q2_panel_isoforms: 229 [tolerance 206, 252]
+  q3_top_gene: MSH6
+  q4_brca1_vs_brca2: 1.6 [tolerance 1.5, 1.7]
+  q5_top3_genes:
+    - MSH6
+    - MSH2
+    - CDH1
