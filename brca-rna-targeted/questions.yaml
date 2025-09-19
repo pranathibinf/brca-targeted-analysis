@@ -1,27 +1,25 @@
-task: Answer based on the subsampled panel-only workflow outputs in results/.
+task: >
+  Using the subsampled FASTQ and the panel-only workflow outputs in the results/ folder 
+  (`isoform_counts.tsv`, `panel_gene_hits.tsv`, `panel_gene_hits_agg.tsv`, and `top_panel_genes.png`), 
+  answer the following for sample ERR13137440.
 questions:
-  -
-    id: q1_total_isoforms
+  - id: q1_total_isoforms
     stage: isoform_assembly
     text: How many total transcripts were assembled?
     answer_type: integer
-  -
-    id: q2_panel_isoforms
+  - id: q2_panel_isoforms
     stage: panel_intersection
     text: How many transcripts overlapped the 28-gene HBOC panel?
     answer_type: integer
-  -
-    id: q3_top_gene
+  - id: q3_top_gene
     stage: gene_summary
     text: Which panel gene had the highest transcript overlap count?
     answer_type: string_exact
-  -
-    id: q4_brca1_vs_brca2
+  - id: q4_brca1_vs_brca2
     stage: gene_comparison
     text: What is the BRCA1/BRCA2 transcript-overlap ratio?
     answer_type: numeric
-  -
-    id: q5_top3_genes
+  - id: q5_top3_genes
     stage: visualization
     text: What are the top 3 panel genes by overlap count (desc)?
     answer_type: list_string
